@@ -6,7 +6,7 @@ public class Elevator {
     private final Engine engine;
 
     private State state = State.AWAITING;
-    private int requestedFloor;
+    private int destinationFloor;
 
     public Elevator(DoorsDriver doorsDriver, Engine engine) {
         this.doorsDriver = doorsDriver;
@@ -27,7 +27,7 @@ public class Elevator {
 
     public void pushButton(int requestedFloor) {
 
-        this.requestedFloor = requestedFloor;
+        destinationFloor = requestedFloor;
 
         if (requestedFloor == currentFloor()) {
             doorsDriver.openDoors();
@@ -39,9 +39,9 @@ public class Elevator {
 
     public void onDoorsClosed() {
 
-        if (requestedFloor > currentFloor()) {
+        if (destinationFloor > currentFloor()) {
             goingUp();
-        } else if (requestedFloor < currentFloor()) {
+        } else if (destinationFloor < currentFloor()) {
             goingDown();
         }
 
@@ -55,6 +55,15 @@ public class Elevator {
     private void goingUp() {
         state = State.GOING_UP;
         engine.up();
+    }
+
+    public void onFloorReached(int reachedFloor) {
+        
+        if(reachedFloor == destinationFloor){
+            engine.stop();
+            doorsDriver.openDoors();
+        }
+        
     }
 
 }

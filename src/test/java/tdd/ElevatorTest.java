@@ -2,6 +2,7 @@ package tdd;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -164,8 +165,47 @@ public class ElevatorTest {
         // then:
         verifyNoMoreInteractions(engine);
     }
+
+    @Test
+    public void shouldOpenDoorsAfterReachingDestinationFloor() throws Exception {
+        
+        // given:
+        destinationFloorIs(1);
+        // when:
+        elevator.onFloorReached(1);
+        // then:
+        verifyThatOpeningDoorsHasBeenRequested();
+    }
+
+    @Test
+    public void shouldStopEngineAfterReachingDestinationFloor() throws Exception {
+        
+        // given:
+        destinationFloorIs(1);
+        // when:
+        elevator.onFloorReached(1);
+        // then:
+        verify(engine).stop();
+    }
+
+    @Test
+    public void shouldNotStopEngineAfterReachingIntermedieteFloor() throws Exception {
+        
+        // given:
+        destinationFloorIs(2);
+        // when:
+        elevator.onFloorReached(1);
+        // then:
+        verifyNoMoreInteractions(engine);
+    }
     
     // --
+    
+    private void destinationFloorIs(int destinationFloor) {
+        elevator.pushButton(destinationFloor);
+        elevator.onDoorsClosed();
+        reset(engine);
+    }
     
     private void verifyThatOpeningDoorsHasBeenRequested() {
         verify(doorsDriver).openDoors();

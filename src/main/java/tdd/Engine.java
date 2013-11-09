@@ -6,4 +6,6 @@ public interface Engine {
 
     public void down();
 
+    public void stop();
+
 }
