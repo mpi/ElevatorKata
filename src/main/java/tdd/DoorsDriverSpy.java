@@ -1,14 +1,16 @@
 package tdd;
 
-public class DoorsDriverSpy {
+public class DoorsDriverSpy implements DoorsDriver {
 
     public boolean doorsOpeningHasBeenRequested;
     public boolean doorsClosingHasBeenRequested;
 
+    @Override
     public void closeDoors() {
         doorsClosingHasBeenRequested = true;
     }
 
+    @Override
     public void openDoors() {
         doorsOpeningHasBeenRequested = true;
     }

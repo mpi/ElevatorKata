@@ -79,6 +79,49 @@ public class ElevatorTest {
         verifyThatClosingDoorsHasNotBeenRequested();
     }
 
+    @Test
+    public void shouldGoUpIfUpperFloorHasBeenRequestedAndDoorsHasBeenClosed() throws Exception {
+
+        // given:
+        elevator.pushButton(1);
+        // when:
+        elevator.onDoorsClosed();
+        // then:
+        assertThat(elevator.state()).isEqualTo(State.GOING_UP);
+    }
+    
+    @Test
+    public void shouldGoDownIfLowerFloorHasBeenRequestedAndDoorsHasBeenClosed() throws Exception {
+        
+        // given:
+        elevator.pushButton(-1);
+        // when:
+        elevator.onDoorsClosed();
+        // then:
+        assertThat(elevator.state()).isEqualTo(State.GOING_DOWN);
+    }
+    
+    @Test
+    public void shouldRemainInAwaitingStateIfCurrentFloorHasBeenRequestedAndDoorsHasBeenClosed() throws Exception {
+        
+        // given:
+        elevator.pushButton(0);
+        // when:
+        elevator.onDoorsClosed();
+        // then:
+        assertThat(elevator.state()).isEqualTo(State.AWAITING);
+    }
+    
+    @Test
+    public void shouldRemainInAwaitingStateUnlessDoorsHasBeenClosed() throws Exception {
+        
+        // given:
+        // when:
+        elevator.pushButton(1);
+        // then:
+        assertThat(elevator.state()).isEqualTo(State.AWAITING);
+    }
+    
     // --
     
     private void verifyThatOpeningDoorsHasBeenRequested() {

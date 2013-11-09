@@ -1,16 +1,17 @@
 package tdd;
 
-
 public class Elevator {
 
-    private DoorsDriverSpy doorsDriver;
+    private DoorsDriver doorsDriver;
+    private State state = State.AWAITING;
+    private int requestedFloor;
 
-    public Elevator(DoorsDriverSpy doorsDriver) {
+    public Elevator(DoorsDriver doorsDriver) {
         this.doorsDriver = doorsDriver;
     }
 
     public enum State {
-        AWAITING
+        AWAITING, GOING_UP, GOING_DOWN
     }
 
     public int currentFloor() {
@@ -18,15 +19,30 @@ public class Elevator {
     }
 
     public State state() {
-        return State.AWAITING;
+        return state;
     }
 
     public void pushButton(int requestedFloor) {
+
+        this.requestedFloor = requestedFloor;
+        
         if (requestedFloor == currentFloor()) {
             doorsDriver.openDoors();
-        } else{
+        } else {
             doorsDriver.closeDoors();
         }
+        
+        
+    }
+
+    public void onDoorsClosed() {
+        
+        if(requestedFloor > currentFloor()){
+            state = State.GOING_UP;
+        } else if(requestedFloor < currentFloor()){
+            state = State.GOING_DOWN;
+        }
+        
     }
 
 }
