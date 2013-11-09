@@ -1,22 +1,32 @@
 package tdd;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import tdd.Elevator.State;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ElevatorTest {
 
-    private DoorsDriverSpy doorsDriver;
+    @Mock
+    private DoorsDriver doorsDriver;
+    @Mock
+    private Engine engine;
 
     private Elevator elevator;
 
+
     @Before
     public void setUp() {
-        doorsDriver = new DoorsDriverSpy();
-        elevator = new Elevator(doorsDriver);
+        elevator = new Elevator(doorsDriver, engine);
     }
     
     @Test
@@ -121,23 +131,56 @@ public class ElevatorTest {
         // then:
         assertThat(elevator.state()).isEqualTo(State.AWAITING);
     }
+
+    @Test
+    public void shouldTurnEngineUpIfGoingUp() throws Exception {
+
+        // given:
+        elevator.pushButton(1);
+        // when:
+        elevator.onDoorsClosed();
+        // then:
+        verify(engine).up();
+    }
+    
+    @Test
+    public void shouldTurnEngineDownIfGoingDown() throws Exception {
+        
+        // given:
+        elevator.pushButton(-1);
+        // when:
+        elevator.onDoorsClosed();
+        // then:
+        verify(engine).down();
+    }
+    
+    @Test
+    public void shouldNotTurnEngineIfCurrentFloorRequested() throws Exception {
+        
+        // given:
+        elevator.pushButton(0);
+        // when:
+        elevator.onDoorsClosed();
+        // then:
+        verifyNoMoreInteractions(engine);
+    }
     
     // --
     
     private void verifyThatOpeningDoorsHasBeenRequested() {
-        assertThat(doorsDriver.doorsOpeningHasBeenRequested()).isTrue();
+        verify(doorsDriver).openDoors();
     }
 
     private void verifyThatOpeningDoorsHasNotBeenRequested() {
-        assertThat(doorsDriver.doorsOpeningHasBeenRequested()).isFalse();
+        verify(doorsDriver, never()).openDoors();
     }
 
     private void verifyThatClosingDoorsHasBeenRequested() {
-        assertThat(doorsDriver.doorsClosingHasBeenRequested()).isTrue();
+        verify(doorsDriver).closeDoors();
     }
     
     private void verifyThatClosingDoorsHasNotBeenRequested() {
-        assertThat(doorsDriver.doorsClosingHasBeenRequested()).isFalse();
+        verify(doorsDriver, never()).closeDoors();
     }
     
 }
