@@ -3,8 +3,11 @@ package tdd;
 
 public class Elevator {
 
-    private boolean doorsOpeningHasBeenRequested;
-    private boolean doorsClosingHasBeenRequested;
+    private DoorsDriverSpy doorsDriver;
+
+    public Elevator(DoorsDriverSpy doorsDriver) {
+        this.doorsDriver = doorsDriver;
+    }
 
     public enum State {
         AWAITING
@@ -18,20 +21,12 @@ public class Elevator {
         return State.AWAITING;
     }
 
-    public boolean doorsOpeningHasBeenRequested() {
-        return doorsOpeningHasBeenRequested;
-    }
-
     public void pushButton(int requestedFloor) {
         if (requestedFloor == currentFloor()) {
-            doorsOpeningHasBeenRequested = true;
+            doorsDriver.openDoors();
         } else{
-            doorsClosingHasBeenRequested = true;
+            doorsDriver.closeDoors();
         }
-    }
-
-    public boolean doorsClosingHasBeenRequested() {
-        return doorsClosingHasBeenRequested;
     }
 
 }

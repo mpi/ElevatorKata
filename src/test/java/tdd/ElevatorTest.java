@@ -9,11 +9,14 @@ import tdd.Elevator.State;
 
 public class ElevatorTest {
 
+    private DoorsDriverSpy doorsDriver;
+
     private Elevator elevator;
 
     @Before
     public void setUp() {
-        elevator = new Elevator();
+        doorsDriver = new DoorsDriverSpy();
+        elevator = new Elevator(doorsDriver);
     }
     
     @Test
@@ -79,19 +82,19 @@ public class ElevatorTest {
     // --
     
     private void verifyThatOpeningDoorsHasBeenRequested() {
-        assertThat(elevator.doorsOpeningHasBeenRequested()).isTrue();
+        assertThat(doorsDriver.doorsOpeningHasBeenRequested()).isTrue();
     }
 
     private void verifyThatOpeningDoorsHasNotBeenRequested() {
-        assertThat(elevator.doorsOpeningHasBeenRequested()).isFalse();
+        assertThat(doorsDriver.doorsOpeningHasBeenRequested()).isFalse();
     }
 
     private void verifyThatClosingDoorsHasBeenRequested() {
-        assertThat(elevator.doorsClosingHasBeenRequested()).isTrue();
+        assertThat(doorsDriver.doorsClosingHasBeenRequested()).isTrue();
     }
     
     private void verifyThatClosingDoorsHasNotBeenRequested() {
-        assertThat(elevator.doorsClosingHasBeenRequested()).isFalse();
+        assertThat(doorsDriver.doorsClosingHasBeenRequested()).isFalse();
     }
     
 }
