@@ -41,9 +41,18 @@ public class Elevator {
 
     }
 
+    public void onDoorsOpened() {
+        doorsDriver.closeDoors();
+    }
+
     public void onDoorsClosed() {
 
-        int destination = requestedFloors.iterator().next();
+        if(hasMoreFloorsToVisit()){
+            await();
+            return;
+        }
+        
+        int destination = nextFloorToVisit();
         
         if (destination > currentFloor()) {
             goingUp();
@@ -51,6 +60,19 @@ public class Elevator {
             goingDown();
         }
 
+    }
+
+    private boolean hasMoreFloorsToVisit() {
+        return requestedFloors.isEmpty();
+    }
+
+    private Integer nextFloorToVisit() {
+        return requestedFloors.iterator().next();
+    }
+
+    private void await() {
+        state = State.AWAITING;
+        return;
     }
 
     private void goingDown() {
@@ -67,12 +89,20 @@ public class Elevator {
 
         currentFloor = reachedFloor;
         
-        if(requestedFloors.contains(reachedFloor)){
-            engine.stop();
-            doorsDriver.openDoors();
-            requestedFloors.remove(reachedFloor);
+        if(shouldStopOnCurrentFloor()){
+            stopOnFloor();
         }
-        
     }
+
+    private boolean shouldStopOnCurrentFloor() {
+        return requestedFloors.contains(currentFloor);
+    }
+
+    private void stopOnFloor() {
+        engine.stop();
+        doorsDriver.openDoors();
+        requestedFloors.remove(currentFloor);
+    }
+
 
 }

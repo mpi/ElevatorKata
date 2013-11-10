@@ -1,6 +1,5 @@
 package tdd;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -179,6 +178,16 @@ public class ElevatorTest {
     }
 
     @Test
+    public void shouldCloseDoorsAfterDoorsHaveBeenOpened() throws Exception {
+
+        // given:
+        // when:
+        elevator.onDoorsOpened();
+        // then:
+        verify(doorsDriver).closeDoors();
+    }
+    
+    @Test
     public void shouldStopEngineAfterReachingDestinationFloor() throws Exception {
         
         // given:
@@ -230,17 +239,33 @@ public class ElevatorTest {
         requestedFloorsAre(1, 2);
         
         // when:
-        elevator.onFloorReached(1);
-        reset(engine);
-        elevator.onDoorsClosed();
+        floorHasBeenVisited(1);
         
         // then:
         verify(engine).up();
     }
 
-    
+    @Test
+    public void shouldEnterAwaitingStateAfterVisitingLastRequestedFloor() throws Exception {
+
+        // given:
+        requestedFloorsAre(1, 2);
+        
+        // when:
+        floorHasBeenVisited(1);
+        floorHasBeenVisited(2);
+        
+        // then:
+        assertThat(elevator.state()).isEqualTo(State.AWAITING);
+    }
     
     // --
+    
+    private void floorHasBeenVisited(int visitedFloor) {
+        elevator.onFloorReached(visitedFloor);
+        reset(engine);
+        elevator.onDoorsClosed();
+    }
     
     private void requestedFloorsAre(int... requestedFloors) {
 
