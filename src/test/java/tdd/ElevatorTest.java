@@ -1,6 +1,7 @@
 package tdd;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
@@ -16,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import tdd.Elevator.State;
+import tdd.Engine.MalfunctionException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ElevatorTest {
@@ -27,12 +29,11 @@ public class ElevatorTest {
 
     private Elevator elevator;
 
-
     @Before
     public void setUp() {
         elevator = new Elevator(doorsDriver, engine);
     }
-    
+
     @Test
     public void shouldStartOnZeroFloor() throws Exception {
 
@@ -75,7 +76,7 @@ public class ElevatorTest {
 
     @Test
     public void shouldCloseDoorsIfDifferentFloorHasBeenRequested() throws Exception {
-        
+
         // given:
         // when:
         elevator.pushButton(1);
@@ -85,7 +86,7 @@ public class ElevatorTest {
 
     @Test
     public void shouldNotCloseDoorsIfCurrentFloorHasBeenRequested() throws Exception {
-        
+
         // given:
         // when:
         elevator.pushButton(0);
@@ -103,10 +104,10 @@ public class ElevatorTest {
         // then:
         assertThat(elevator.state()).isEqualTo(State.GOING_UP);
     }
-    
+
     @Test
     public void shouldGoDownIfLowerFloorHasBeenRequestedAndDoorsHasBeenClosed() throws Exception {
-        
+
         // given:
         elevator.pushButton(-1);
         // when:
@@ -114,10 +115,10 @@ public class ElevatorTest {
         // then:
         assertThat(elevator.state()).isEqualTo(State.GOING_DOWN);
     }
-    
+
     @Test
     public void shouldRemainInAwaitingStateIfCurrentFloorHasBeenRequestedAndDoorsHasBeenClosed() throws Exception {
-        
+
         // given:
         elevator.pushButton(0);
         // when:
@@ -125,10 +126,10 @@ public class ElevatorTest {
         // then:
         assertThat(elevator.state()).isEqualTo(State.AWAITING);
     }
-    
+
     @Test
     public void shouldRemainInAwaitingStateUnlessDoorsHasBeenClosed() throws Exception {
-        
+
         // given:
         // when:
         elevator.pushButton(1);
@@ -146,10 +147,10 @@ public class ElevatorTest {
         // then:
         verify(engine).up();
     }
-    
+
     @Test
     public void shouldTurnEngineDownIfGoingDown() throws Exception {
-        
+
         // given:
         elevator.pushButton(-1);
         // when:
@@ -157,10 +158,10 @@ public class ElevatorTest {
         // then:
         verify(engine).down();
     }
-    
+
     @Test
     public void shouldNotTurnEngineIfCurrentFloorRequested() throws Exception {
-        
+
         // given:
         elevator.pushButton(0);
         // when:
@@ -171,7 +172,7 @@ public class ElevatorTest {
 
     @Test
     public void shouldOpenDoorsAfterReachingDestinationFloor() throws Exception {
-        
+
         // given:
         requestedFloorsAre(1);
         // when:
@@ -189,10 +190,10 @@ public class ElevatorTest {
         // then:
         verify(doorsDriver).closeDoors();
     }
-    
+
     @Test
     public void shouldStopEngineAfterReachingDestinationFloor() throws Exception {
-        
+
         // given:
         requestedFloorsAre(1);
         // when:
@@ -203,7 +204,7 @@ public class ElevatorTest {
 
     @Test
     public void shouldNotStopEngineAfterReachingIntermedieteFloor() throws Exception {
-        
+
         // given:
         requestedFloorsAre(2);
         // when:
@@ -211,7 +212,7 @@ public class ElevatorTest {
         // then:
         verifyNoMoreInteractions(engine);
     }
-    
+
     @Test
     public void shouldUpdateCurrentFloorIfNewFloorReached() throws Exception {
 
@@ -221,29 +222,29 @@ public class ElevatorTest {
         // then:
         assertThat(elevator.currentFloor()).isEqualTo(2);
     }
-    
+
     @Test
     public void shouldStopOnFirstFloorIfMultipleFloorsRequested() throws Exception {
 
         // given:
         requestedFloorsAre(1, 2);
-        
+
         // when:
         elevator.onFloorReached(1);
-        
+
         // then:
         verify(engine).stop();
     }
-    
+
     @Test
     public void shouldContinueToNextFloorIfFirstVisited() throws Exception {
-        
+
         // given:
         requestedFloorsAre(1, 2);
-        
+
         // when:
         floorHasBeenVisited(1);
-        
+
         // then:
         verify(engine).up();
     }
@@ -253,28 +254,28 @@ public class ElevatorTest {
 
         // given:
         requestedFloorsAre(1, 2);
-        
+
         // when:
         floorHasBeenVisited(1);
         floorHasBeenVisited(2);
-        
+
         // then:
         assertThat(elevator.state()).isEqualTo(State.AWAITING);
     }
-    
+
     @Test
     public void shouldPickInitialDirectionBasedOnFirstPushedButton() throws Exception {
 
         // given:
         requestedFloorsAre(-1, 1);
-        
+
         // when:
         elevator.onDoorsClosed();
-        
+
         // then:
         verify(engine).down();
     }
-    
+
     @Test
     public void shouldMaintainOneDirectionAsLongAsPossible() throws Exception {
 
@@ -288,13 +289,27 @@ public class ElevatorTest {
         // then:
         assertThat(simulation.visited()).containsExactly(1, 2, 3, -1, -2);
     }
-    
+
     @Test
-    public void shouldIgnoreDuplicatedFloorREquests() throws Exception {
+    public void shouldMaintainOneDirectionAsLongAsPossible2() throws Exception {
         
         SimulationEngine simulation = new SimulationEngine();
         elevator = new Elevator(new ImmediateDoorsDriver(), simulation);
         
+        // given:
+        requestedFloorsAre(-1, 1, -3, 2, -2);
+        // when:
+        simulation.simulate();
+        // then:
+        assertThat(simulation.visited()).containsExactly(-1, -2, -3, 1, 2);
+    }
+    
+    @Test
+    public void shouldIgnoreDuplicatedFloorREquests() throws Exception {
+
+        SimulationEngine simulation = new SimulationEngine();
+        elevator = new Elevator(new ImmediateDoorsDriver(), simulation);
+
         // given:
         requestedFloorsAre(1, 2, 1, 2);
         // when:
@@ -302,15 +317,72 @@ public class ElevatorTest {
         // then:
         assertThat(simulation.visited()).containsExactly(1, 2);
     }
-    
+
+    @Test
+    public void shouldEnterNeedMaintenenceStateInCaseOfEngineFailureUp() throws Exception {
+
+        // given:
+        engineIsBroken();
+
+        // when:
+        elevator.pushButton(1);
+        elevator.onDoorsClosed();
+
+        // then:
+        verifyInMaintenenceMode();
+    }
+
+    @Test
+    public void shouldEnterNeedMaintenenceStateInCaseOfEngineFailureDown() throws Exception {
+
+        // given:
+        engineIsBroken();
+
+        // when:
+        elevator.pushButton(-1);
+        elevator.onDoorsClosed();
+
+        // then:
+        verifyInMaintenenceMode();
+    }
+
+    @Test
+    public void shouldEnterNeedMaintenenceStateInCaseOfEngineFailureStop() throws Exception {
+
+        // given:
+        engineIsBroken();
+
+        // when:
+        elevator.pushButton(1);
+        elevator.onDoorsClosed();
+        elevator.onFloorReached(1);
+
+        // then:
+        verifyInMaintenenceMode();
+    }
+
+    @Test
+    public void shouldNotRespondToAnyFloorRequestsWhenInMaintenenceMode() throws Exception {
+
+        // given:
+        elevatorIsInMaintenenceMode();
+
+        // when:
+        elevator.pushButton(2);
+        elevator.onDoorsClosed();
+
+        // then:
+        verifyNoMoreInteractions(engine);
+    }
+
     // --
-    
+
     private void floorHasBeenVisited(int visitedFloor) {
         elevator.onFloorReached(visitedFloor);
         reset(engine);
         elevator.onDoorsClosed();
     }
-    
+
     private void requestedFloorsAre(int... requestedFloors) {
 
         for (int floor : requestedFloors) {
@@ -319,7 +391,7 @@ public class ElevatorTest {
         elevator.onDoorsClosed();
         reset(engine);
     }
-    
+
     private void verifyThatOpeningDoorsHasBeenRequested() {
         verify(doorsDriver).openDoors();
     }
@@ -331,29 +403,29 @@ public class ElevatorTest {
     private void verifyThatClosingDoorsHasBeenRequested() {
         verify(doorsDriver).closeDoors();
     }
-    
+
     private void verifyThatClosingDoorsHasNotBeenRequested() {
         verify(doorsDriver, never()).closeDoors();
     }
-    
+
     private final class ImmediateDoorsDriver implements DoorsDriver {
         @Override
         public void closeDoors() {
             elevator.onDoorsClosed();
         }
-        
+
         @Override
         public void openDoors() {
             elevator.onDoorsOpened();
         }
     }
-    
+
     public class SimulationEngine implements Engine {
 
         private int direction = 0;
         private int floor = 0;
         private List<Integer> visited = new ArrayList<Integer>();
-        
+
         @Override
         public void up() {
             direction = 1;
@@ -370,8 +442,8 @@ public class ElevatorTest {
             visited.add(floor);
         }
 
-        public void simulate(){
-            for(int i=0; i<100; i++){
+        public void simulate() {
+            for (int i = 0; i < 100; i++) {
                 floor += direction;
                 elevator.onFloorReached(floor);
             }
@@ -380,11 +452,24 @@ public class ElevatorTest {
         public List<Integer> visited() {
             return visited;
         }
-        
+
     }
 
+    private void verifyInMaintenenceMode() {
+        assertThat(elevator.state()).isEqualTo(State.NEED_MAINTENENCE);
+    }
+
+    private void engineIsBroken() throws MalfunctionException {
+        doThrow(new MalfunctionException()).when(engine).up();
+        doThrow(new MalfunctionException()).when(engine).down();
+        doThrow(new MalfunctionException()).when(engine).stop();
+    }
+
+    private void elevatorIsInMaintenenceMode() throws MalfunctionException {
+        engineIsBroken();
+        elevator.pushButton(1);
+        elevator.onDoorsClosed();
+        reset(engine);
+    }
 
 }
-
-
-
