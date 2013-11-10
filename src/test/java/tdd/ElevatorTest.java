@@ -1,5 +1,6 @@
 package tdd;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -170,7 +171,7 @@ public class ElevatorTest {
     public void shouldOpenDoorsAfterReachingDestinationFloor() throws Exception {
         
         // given:
-        destinationFloorIs(1);
+        requestedFloorsAre(1);
         // when:
         elevator.onFloorReached(1);
         // then:
@@ -181,7 +182,7 @@ public class ElevatorTest {
     public void shouldStopEngineAfterReachingDestinationFloor() throws Exception {
         
         // given:
-        destinationFloorIs(1);
+        requestedFloorsAre(1);
         // when:
         elevator.onFloorReached(1);
         // then:
@@ -192,17 +193,60 @@ public class ElevatorTest {
     public void shouldNotStopEngineAfterReachingIntermedieteFloor() throws Exception {
         
         // given:
-        destinationFloorIs(2);
+        requestedFloorsAre(2);
         // when:
         elevator.onFloorReached(1);
         // then:
         verifyNoMoreInteractions(engine);
     }
     
+    @Test
+    public void shouldUpdateCurrentFloorIfNewFloorReached() throws Exception {
+
+        // given:
+        // when:
+        elevator.onFloorReached(2);
+        // then:
+        assertThat(elevator.currentFloor()).isEqualTo(2);
+    }
+    
+    @Test
+    public void shouldStopOnFirstFloorIfMultipleFloorsRequested() throws Exception {
+
+        // given:
+        requestedFloorsAre(1, 2);
+        
+        // when:
+        elevator.onFloorReached(1);
+        
+        // then:
+        verify(engine).stop();
+    }
+    
+    @Test
+    public void shouldContinueToNextFloorIfFirstVisited() throws Exception {
+        
+        // given:
+        requestedFloorsAre(1, 2);
+        
+        // when:
+        elevator.onFloorReached(1);
+        reset(engine);
+        elevator.onDoorsClosed();
+        
+        // then:
+        verify(engine).up();
+    }
+
+    
+    
     // --
     
-    private void destinationFloorIs(int destinationFloor) {
-        elevator.pushButton(destinationFloor);
+    private void requestedFloorsAre(int... requestedFloors) {
+
+        for (int floor : requestedFloors) {
+            elevator.pushButton(floor);
+        }
         elevator.onDoorsClosed();
         reset(engine);
     }

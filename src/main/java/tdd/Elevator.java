@@ -1,12 +1,16 @@
 package tdd;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class Elevator {
 
     private final DoorsDriver doorsDriver;
     private final Engine engine;
 
     private State state = State.AWAITING;
-    private int destinationFloor;
+    private Set<Integer> requestedFloors = new HashSet<Integer>();
+    private int currentFloor = 0;
 
     public Elevator(DoorsDriver doorsDriver, Engine engine) {
         this.doorsDriver = doorsDriver;
@@ -18,7 +22,7 @@ public class Elevator {
     }
 
     public int currentFloor() {
-        return 0;
+        return currentFloor;
     }
 
     public State state() {
@@ -27,7 +31,7 @@ public class Elevator {
 
     public void pushButton(int requestedFloor) {
 
-        destinationFloor = requestedFloor;
+        requestedFloors.add(requestedFloor);
 
         if (requestedFloor == currentFloor()) {
             doorsDriver.openDoors();
@@ -39,9 +43,11 @@ public class Elevator {
 
     public void onDoorsClosed() {
 
-        if (destinationFloor > currentFloor()) {
+        int destination = requestedFloors.iterator().next();
+        
+        if (destination > currentFloor()) {
             goingUp();
-        } else if (destinationFloor < currentFloor()) {
+        } else if (destination < currentFloor()) {
             goingDown();
         }
 
@@ -58,10 +64,13 @@ public class Elevator {
     }
 
     public void onFloorReached(int reachedFloor) {
+
+        currentFloor = reachedFloor;
         
-        if(reachedFloor == destinationFloor){
+        if(requestedFloors.contains(reachedFloor)){
             engine.stop();
             doorsDriver.openDoors();
+            requestedFloors.remove(reachedFloor);
         }
         
     }
