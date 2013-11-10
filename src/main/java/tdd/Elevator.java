@@ -31,7 +31,7 @@ public class Elevator {
 
     public void pushButton(int requestedFloor) {
 
-        requestedFloors.add(requestedFloor);
+        queueRequestedFloor(requestedFloor);
 
         if (requestedFloor == currentFloor()) {
             doorsDriver.openDoors();
@@ -39,6 +39,13 @@ public class Elevator {
             doorsDriver.closeDoors();
         }
 
+    }
+
+    private void queueRequestedFloor(int floor) {
+        
+        if(!requestedFloors.contains(floor)){
+            requestedFloors.add(floor);
+        }
     }
 
     public void onDoorsOpened() {
@@ -52,11 +59,11 @@ public class Elevator {
             return;
         }
         
-        int destination = nextFloorToVisit();
+        int nextFloor = nextFloorToVisit();
         
-        if (destination > currentFloor()) {
+        if (nextFloor > currentFloor()) {
             goingUp();
-        } else if (destination < currentFloor()) {
+        } else if (nextFloor < currentFloor()) {
             goingDown();
         }
 
@@ -68,7 +75,39 @@ public class Elevator {
 
     private Integer nextFloorToVisit() {
         
-        return requestedFloors.iterator().next();
+        if(State.GOING_UP.equals(state)){
+            if(hasMoreRequestedFloorsAbove()){
+               return currentFloor + 1; 
+            }
+        }
+        
+        if(State.GOING_DOWN.equals(state)){
+            if(hasMoreRequestedFloorsBelow()){
+                return currentFloor - 1; 
+            }
+        }
+        
+        return requestedFloors.get(0);
+    }
+
+    private boolean hasMoreRequestedFloorsAbove() {
+
+        for (Integer floor : requestedFloors) {
+            if(floor > currentFloor){
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private boolean hasMoreRequestedFloorsBelow() {
+        
+        for (Integer floor : requestedFloors) {
+            if(floor < currentFloor){
+                return true;
+            }
+        }
+        return false;
     }
 
     private void await() {

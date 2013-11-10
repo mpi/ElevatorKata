@@ -289,6 +289,20 @@ public class ElevatorTest {
         assertThat(simulation.visited()).containsExactly(1, 2, 3, -1, -2);
     }
     
+    @Test
+    public void shouldIgnoreDuplicatedFloorREquests() throws Exception {
+        
+        SimulationEngine simulation = new SimulationEngine();
+        elevator = new Elevator(new ImmediateDoorsDriver(), simulation);
+        
+        // given:
+        requestedFloorsAre(1, 2, 1, 2);
+        // when:
+        simulation.simulate();
+        // then:
+        assertThat(simulation.visited()).containsExactly(1, 2);
+    }
+    
     // --
     
     private void floorHasBeenVisited(int visitedFloor) {
