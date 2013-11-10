@@ -1,7 +1,7 @@
 package tdd;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Elevator {
 
@@ -9,7 +9,7 @@ public class Elevator {
     private final Engine engine;
 
     private State state = State.AWAITING;
-    private Set<Integer> requestedFloors = new HashSet<Integer>();
+    private List<Integer> requestedFloors = new ArrayList<Integer>();
     private int currentFloor = 0;
 
     public Elevator(DoorsDriver doorsDriver, Engine engine) {
@@ -67,6 +67,7 @@ public class Elevator {
     }
 
     private Integer nextFloorToVisit() {
+        
         return requestedFloors.iterator().next();
     }
 
@@ -100,8 +101,8 @@ public class Elevator {
 
     private void stopOnFloor() {
         engine.stop();
+        requestedFloors.remove((Object)currentFloor);
         doorsDriver.openDoors();
-        requestedFloors.remove(currentFloor);
     }
 
 

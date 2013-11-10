@@ -6,6 +6,9 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -259,6 +262,33 @@ public class ElevatorTest {
         assertThat(elevator.state()).isEqualTo(State.AWAITING);
     }
     
+    @Test
+    public void shouldPickInitialDirectionBasedOnFirstPushedButton() throws Exception {
+
+        // given:
+        requestedFloorsAre(-1, 1);
+        
+        // when:
+        elevator.onDoorsClosed();
+        
+        // then:
+        verify(engine).down();
+    }
+    
+    @Test
+    public void shouldMaintainOneDirectionAsLongAsPossible() throws Exception {
+
+        SimulationEngine simulation = new SimulationEngine();
+        elevator = new Elevator(new ImmediateDoorsDriver(), simulation);
+
+        // given:
+        requestedFloorsAre(1, -1, 3, -2, 2);
+        // when:
+        simulation.simulate();
+        // then:
+        assertThat(simulation.visited()).containsExactly(1, 2, 3, -1, -2);
+    }
+    
     // --
     
     private void floorHasBeenVisited(int visitedFloor) {
@@ -292,6 +322,55 @@ public class ElevatorTest {
         verify(doorsDriver, never()).closeDoors();
     }
     
+    private final class ImmediateDoorsDriver implements DoorsDriver {
+        @Override
+        public void closeDoors() {
+            elevator.onDoorsClosed();
+        }
+        
+        @Override
+        public void openDoors() {
+            elevator.onDoorsOpened();
+        }
+    }
+    
+    public class SimulationEngine implements Engine {
+
+        private int direction = 0;
+        private int floor = 0;
+        private List<Integer> visited = new ArrayList<Integer>();
+        
+        @Override
+        public void up() {
+            direction = 1;
+        }
+
+        @Override
+        public void down() {
+            direction = -1;
+        }
+
+        @Override
+        public void stop() {
+            direction = 0;
+            visited.add(floor);
+        }
+
+        public void simulate(){
+            for(int i=0; i<100; i++){
+                floor += direction;
+                elevator.onFloorReached(floor);
+            }
+        }
+
+        public List<Integer> visited() {
+            return visited;
+        }
+        
+    }
+
+
 }
+
 
 
