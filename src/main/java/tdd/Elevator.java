@@ -3,7 +3,9 @@ package tdd;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Elevator {
+import tdd.Engine.MalfunctionException;
+
+public class Elevator implements DoorsStatusListener, CurrentFloorListener {
 
     private final DoorsDriver doorsDriver;
     private final Engine engine;
@@ -18,7 +20,7 @@ public class Elevator {
     }
 
     public enum State {
-        AWAITING, GOING_UP, GOING_DOWN
+        AWAITING, GOING_UP, GOING_DOWN, NEED_MAINTENENCE
     }
 
     public int currentFloor() {
@@ -42,25 +44,31 @@ public class Elevator {
     }
 
     private void queueRequestedFloor(int floor) {
-        
-        if(!requestedFloors.contains(floor)){
+
+        if (!requestedFloors.contains(floor)) {
             requestedFloors.add(floor);
         }
     }
 
+    @Override
     public void onDoorsOpened() {
         doorsDriver.closeDoors();
     }
 
+    @Override
     public void onDoorsClosed() {
 
-        if(hasMoreFloorsToVisit()){
+        if (isInNeedMaintenence()) {
+            return;
+        }
+
+        if (hasMoreFloorsToVisit()) {
             await();
             return;
         }
-        
+
         int nextFloor = nextFloorToVisit();
-        
+
         if (nextFloor > currentFloor()) {
             goingUp();
         } else if (nextFloor < currentFloor()) {
@@ -74,36 +82,56 @@ public class Elevator {
     }
 
     private Integer nextFloorToVisit() {
-        
-        if(State.GOING_UP.equals(state)){
-            if(hasMoreRequestedFloorsAbove()){
-               return currentFloor + 1; 
-            }
+
+        if (shouldContinueGoingUp()) {
+            return currentFloor + 1;
         }
-        
-        if(State.GOING_DOWN.equals(state)){
-            if(hasMoreRequestedFloorsBelow()){
-                return currentFloor - 1; 
-            }
+
+        if (shoundContinueGoingDown()) {
+            return currentFloor - 1;
         }
-        
+
+        return calculateInitialDirection();
+    }
+
+    private Integer calculateInitialDirection() {
         return requestedFloors.get(0);
+    }
+
+    private boolean shoundContinueGoingDown() {
+        return isGoingDown() && hasMoreRequestedFloorsBelow();
+    }
+
+    private boolean shouldContinueGoingUp() {
+        return isGoingUp() && hasMoreRequestedFloorsAbove();
+    }
+
+    private boolean isGoingDown() {
+        return State.GOING_DOWN.equals(state);
+    }
+
+    private boolean isGoingUp() {
+        return State.GOING_UP.equals(state);
+    }
+
+    private boolean isInNeedMaintenence() {
+        return State.NEED_MAINTENENCE.equals(state);
     }
 
     private boolean hasMoreRequestedFloorsAbove() {
 
         for (Integer floor : requestedFloors) {
-            if(floor > currentFloor){
+            if (floor > currentFloor) {
                 return true;
             }
         }
         return false;
     }
-    
+
     private boolean hasMoreRequestedFloorsBelow() {
-        
+
         for (Integer floor : requestedFloors) {
-            if(floor < currentFloor){
+            if (floor < currentFloor) {
                 return true;
             }
         }
@@ -117,19 +145,34 @@ public class Elevator {
 
     private void goingDown() {
         state = State.GOING_DOWN;
-        engine.down();
+        try {
+            engine.down();
+        } catch (MalfunctionException e) {
+            needMaintenence();
+        }
     }
 
     private void goingUp() {
         state = State.GOING_UP;
-        engine.up();
+        try {
+            engine.up();
+        } catch (MalfunctionException e) {
+            needMaintenence();
+        }
     }
 
+    private void needMaintenence() {
+        state = State.NEED_MAINTENENCE;
+        engine.stop();
+        doorsDriver.openDoors();
+    }
+
+    @Override
     public void onFloorReached(int reachedFloor) {
 
         currentFloor = reachedFloor;
-        
-        if(shouldStopOnCurrentFloor()){
+
+        if (shouldStopOnCurrentFloor()) {
             stopOnFloor();
         }
     }
@@ -140,9 +183,8 @@ public class Elevator {
 
     private void stopOnFloor() {
         engine.stop();
-        requestedFloors.remove((Object)currentFloor);
+        requestedFloors.remove((Object) currentFloor);
         doorsDriver.openDoors();
     }
-
 
 }
